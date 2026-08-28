@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Media Hub — YouTube Downloader</title>
 <meta name="description" content="Paste a YouTube link, pick a format and quality, download. Fast, simple, free.">
-<link rel="icon" href="mediahub.jpg" type="image/jpeg">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23ff6b6b'/><stop offset='100%25' stop-color='%23ff0000'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><polygon points='40,25 40,75 78,50' fill='%2306171b'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -99,8 +99,10 @@
 
   /* ── search ── */
   .search-row {
-    display: flex; gap: 12px; background: var(--surface); border: 1px solid var(--line);
+    display: flex; gap: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
     padding: 10px; border-radius: 16px; box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
   .search-row input {
     flex: 1; border: none; outline: none; font-size: 15.5px; padding: 14px 18px;
@@ -108,16 +110,6 @@
   }
   .search-row input::placeholder { color: #565c66; }
 
-  .get-info {
-    border: none; cursor: pointer; padding: 0 24px; border-radius: 10px;
-    background: linear-gradient(120deg, var(--red-light), var(--red-soft));
-    color: #06171b; font-weight: 800; font-size: 14px; letter-spacing: .2px;
-    box-shadow: 0 10px 24px -10px rgba(255,107,107,.5);
-    transition: transform .15s ease, box-shadow .15s ease;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-  }
-  .get-info:hover { transform: translateY(-2px); box-shadow: 0 16px 30px -12px rgba(255,107,107,.6); }
-  .get-info:active { transform: translateY(0); }
 
   .hint { font-family: 'Caveat', cursive; font-size: 19px; color: #6b7280; margin: 14px 4px 0; }
 
@@ -159,6 +151,20 @@
     color: var(--blue); font-size: 12px; padding: 3px 8px; border-radius: 6px; font-weight: 600;
     font-family: 'JetBrains Mono', monospace; border: 1px solid rgba(62,166,255,.3);
   }
+  .thumb-dl-btn {
+    position: absolute; top: 8px; right: 8px;
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.2);
+    background: rgba(0,0,0,.5); color: #fff;
+    cursor: pointer; font-size: 14px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s ease; opacity: 1;
+  }
+  .thumb-dl-btn:hover {
+    background: rgba(255,107,107,.4); border-color: rgba(255,107,107,.6); transform: scale(1.1);
+  }
 
   .info h1 { font-size: 21px; margin: 2px 0 8px; font-weight: 800; line-height: 1.3; }
   .info p  { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin: 0 0 18px; }
@@ -166,15 +172,18 @@
   /* ── format toggle ── */
   .format-toggle { display: flex; gap: 12px; margin-bottom: 18px; }
   .fmt-btn {
-    flex: 1; border: 1.5px solid var(--line); background: var(--surface-2); border-radius: 12px;
+    flex: 1; border: 1.5px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04); border-radius: 12px;
     padding: 16px 14px; cursor: pointer; text-align: left; position: relative; color: var(--text);
-    transition: border-color .18s, transform .18s, box-shadow .18s, background .18s;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all .18s ease;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
   }
-  .fmt-btn:hover { transform: translateY(-2px); }
+  .fmt-btn:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.2); background: rgba(255,255,255,.06); }
   .fmt-btn .fmt-name { font-weight: 800; font-size: 15.5px; display: flex; align-items: center; gap: 8px; }
   .fmt-btn .fmt-sub  { font-size: 12px; color: var(--muted); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
-  .fmt-btn.mp4.active { border-color: var(--red-soft); box-shadow: 0 0 0 1px var(--red-soft) inset, 0 10px 24px -14px rgba(255,107,107,.4); background: #2a1014; }
-  .fmt-btn.mp3.active { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue) inset, 0 10px 24px -14px rgba(62,166,255,.35); background: #0f1a2a; }
+  .fmt-btn.mp4.active { border-color: rgba(255,107,107,.5); box-shadow: 0 0 0 1px rgba(255,107,107,.2) inset, 0 10px 24px -14px rgba(255,107,107,.4); background: rgba(255,107,107,.12); }
+  .fmt-btn.mp3.active { border-color: rgba(62,166,255,.5); box-shadow: 0 0 0 1px rgba(62,166,255,.2) inset, 0 10px 24px -14px rgba(62,166,255,.35); background: rgba(62,166,255,.12); }
   .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
   .fmt-btn.mp4 .dot { background: var(--red); box-shadow: 0 0 8px var(--red); }
   .fmt-btn.mp3 .dot { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
@@ -185,10 +194,10 @@
   .q-btn {
     flex: 1 1 calc(25% - 10px);
     min-width: 80px;
-    border: 1px solid rgba(255,255,255,.08);
-    background: rgba(255,255,255,.03);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     padding: 14px 10px;
     border-radius: 12px;
     font-weight: 700;
@@ -198,58 +207,61 @@
     color: var(--text);
     transition: all .2s ease;
     font-family: 'JetBrains Mono', monospace;
-    box-shadow: 0 4px 12px rgba(0,0,0,.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
   }
   .q-btn small { display: block; font-weight: 500; color: var(--muted); font-size: 10.5px; margin-top: 4px; font-family: 'Plus Jakarta Sans', sans-serif; }
   .q-btn:hover {
-    border-color: rgba(255,107,107,.4);
-    background: rgba(255,107,107,.08);
+    border-color: rgba(255,107,107,.45);
+    background: rgba(255,107,107,.1);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0,0,0,.3), 0 0 0 1px rgba(255,107,107,.1) inset;
+    box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 0 0 1px rgba(255,107,107,.15) inset;
   }
   .q-btn.selected {
-    background: linear-gradient(120deg, var(--red-light), var(--red-soft));
-    color: #06171b;
-    border-color: transparent;
-    box-shadow: 0 10px 24px -10px rgba(255,107,107,.5), 0 0 0 1px rgba(255,255,255,.1) inset;
+    background: rgba(255,107,107,.15);
+    color: var(--red-light);
+    border-color: rgba(255,107,107,.5);
+    box-shadow: 0 10px 28px -12px rgba(255,107,107,.5), 0 0 0 1px rgba(255,107,107,.2) inset;
   }
-  .q-btn.selected small { color: #1a0505; }
+  .q-btn.selected small { color: var(--red-soft); }
   .quality-grid.mp3 .q-btn.selected {
-    background: linear-gradient(120deg, var(--blue), var(--blue-deep));
-    color: #0f1a2a;
-    box-shadow: 0 10px 24px -10px rgba(62,166,255,.4), 0 0 0 1px rgba(255,255,255,.1) inset;
+    background: rgba(62,166,255,.15);
+    color: var(--blue);
+    border-color: rgba(62,166,255,.5);
+    box-shadow: 0 10px 28px -12px rgba(62,166,255,.4), 0 0 0 1px rgba(62,166,255,.2) inset;
   }
-  .quality-grid.mp3 .q-btn.selected small { color: #050f1a; }
+  .quality-grid.mp3 .q-btn.selected small { color: #6db8ff; }
   .quality-grid.mp3 .q-btn:hover {
-    border-color: rgba(62,166,255,.4);
-    background: rgba(62,166,255,.08);
-    box-shadow: 0 8px 20px rgba(0,0,0,.3), 0 0 0 1px rgba(62,166,255,.1) inset;
+    border-color: rgba(62,166,255,.45);
+    background: rgba(62,166,255,.1);
+    box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 0 0 1px rgba(62,166,255,.15) inset;
   }
 
   /* ── download CTA ── */
   .download-cta {
-    margin-top: 18px; width: 100%; border: none; padding: 16px; border-radius: 12px;
-    font-weight: 800; font-size: 15px; letter-spacing: .3px; color: #06171b; cursor: pointer;
-    background: linear-gradient(120deg, var(--red-light), var(--red-soft));
-    box-shadow: 0 14px 26px -14px rgba(255,107,107,.5);
-    transition: transform .15s ease, opacity .15s ease;
+    margin-top: 18px; width: 100%; border: 1px solid rgba(255,107,107,.4); padding: 16px; border-radius: 12px;
+    font-weight: 800; font-size: 15px; letter-spacing: .3px; color: var(--red-light); cursor: pointer;
+    background: rgba(255,107,107,.12);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 14px 32px -16px rgba(255,107,107,.45), 0 0 0 1px rgba(255,107,107,.1) inset;
+    transition: all .2s ease;
   }
-  .download-cta.mp3   { background: linear-gradient(120deg, var(--blue), var(--blue-deep)); color: #0f1a2a; box-shadow: 0 14px 26px -14px rgba(62,166,255,.4); }
-  .download-cta:hover { transform: translateY(-2px); }
+  .download-cta:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -16px rgba(255,107,107,.55), 0 0 0 1px rgba(255,107,107,.15) inset; }
+  .download-cta.mp3   { border-color: rgba(62,166,255,.4); color: var(--blue); background: rgba(62,166,255,.12); box-shadow: 0 14px 32px -16px rgba(62,166,255,.4), 0 0 0 1px rgba(62,166,255,.1) inset; }
   .download-cta:disabled { opacity: .5; cursor: not-allowed; transform: none; }
   
   .download-cta.loading {
     background-image: 
-      linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent),
-      linear-gradient(120deg, var(--red-light), var(--red-soft));
+      linear-gradient(45deg, rgba(255,255,255,.12) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.12) 75%, transparent 75%, transparent),
+      rgba(255,107,107,.15);
     background-size: 40px 40px, 100% 100%;
     animation: scan 1s linear infinite;
     cursor: wait; pointer-events: none;
   }
   .download-cta.mp3.loading {
     background-image: 
-      linear-gradient(45deg, rgba(0,0,0,.08) 25%, transparent 25%, transparent 50%, rgba(0,0,0,.08) 50%, rgba(0,0,0,.08) 75%, transparent 75%, transparent),
-      linear-gradient(120deg, var(--blue), var(--blue-deep));
+      linear-gradient(45deg, rgba(0,0,0,.1) 25%, transparent 25%, transparent 50%, rgba(0,0,0,.1) 50%, rgba(0,0,0,.1) 75%, transparent 75%, transparent),
+      rgba(62,166,255,.15);
   }
   
   .download-hint {
@@ -257,50 +269,6 @@
     text-align: center; font-family: 'JetBrains Mono', monospace; animation: blink 2s infinite;
   }
   .download-hint.mp3 { color: var(--blue); }
-
-  /* ── guide section ── */
-  .lower { margin-top: 40px; }
-  .panel-title { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; }
-  .panel-title h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--muted); margin: 0; }
-  .panel-title .scribble { font-family: 'Caveat', cursive; font-size: 22px; color: var(--red); }
-
-  .guide {
-    background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
-    padding: 26px; box-shadow: var(--shadow); display: grid; grid-template-columns: 1fr 1fr; gap: 0;
-  }
-  .guide-col { padding: 6px 22px; }
-  .guide-col + .guide-col { border-left: 1px dashed var(--line); }
-  .guide-col h3 { font-family: 'Caveat', cursive; font-size: 26px; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
-  .guide-col .sub { font-size: 12px; color: var(--muted); margin: 0 0 16px; font-family: 'JetBrains Mono', monospace; }
-  .guide-item { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
-  .guide-col .guide-item:first-of-type { border-top: none; }
-  .guide-item .g-label { flex-shrink: 0; width: 66px; font-weight: 800; font-size: 13px; padding-top: 1px; font-family: 'JetBrains Mono', monospace; }
-  .guide-col.mp4 .g-label { color: var(--red); }
-  .guide-col.mp3 .g-label { color: var(--blue); }
-  .guide-item .g-desc { font-size: 13px; color: var(--muted); line-height: 1.55; }
-  .guide-item .g-desc b { color: var(--text); }
-
-  /* ── accordion ── */
-  .accordion { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
-  .accordion-header {
-    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 18px 26px; border: none; background: transparent; color: var(--text);
-    font-family: 'Plus Jakarta Sans', sans-serif; cursor: pointer; text-align: left;
-  }
-  .accordion-header:hover { background: rgba(255,255,255,0.02); }
-  .panel-title { display: flex; align-items: baseline; gap: 10px; margin: 0; }
-  .panel-title h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--muted); margin: 0; }
-  .panel-title .scribble { font-family: 'Caveat', cursive; font-size: 22px; color: var(--red); }
-  .chevron {
-    font-size: 18px; color: var(--muted); transition: transform 0.3s ease;
-    flex-shrink: 0; line-height: 1;
-  }
-  .accordion.open .chevron { transform: rotate(180deg); }
-  .accordion-body {
-    max-height: 0; opacity: 0; overflow: hidden;
-    transition: max-height 0.4s ease, opacity 0.3s ease;
-  }
-  .accordion.open .accordion-body { max-height: 1200px; opacity: 1; }
 
   footer {
     text-align: center; padding: 26px; font-family: 'Caveat', cursive; font-size: 18px;
@@ -310,8 +278,6 @@
   /* ── responsive ── */
   @media (max-width: 760px) {
     .result { grid-template-columns: 1fr; }
-    .guide  { grid-template-columns: 1fr; }
-    .guide-col + .guide-col { border-left: none; border-top: 1px dashed var(--line); margin-top: 10px; padding-top: 18px; }
     .quality-grid { grid-template-columns: repeat(2,1fr); }
   }
 </style>
@@ -337,7 +303,6 @@
     <!-- URL input -->
     <div class="search-row">
       <input id="urlInput" type="text" placeholder="paste a YouTube link…">
-      <button class="get-info" id="fetchBtn">Get Info</button>
     </div>
     <div class="hint" id="hintText">— paste a link above to fetch video info —</div>
 
@@ -353,6 +318,13 @@
         <span class="thumb-placeholder" id="thumbPlaceholder">thumbnail</span>
         <img id="thumbImg" src="" alt="thumbnail" style="display:none;">
         <div class="thumb-badge" id="thumbBadge">0:00</div>
+        <button class="thumb-dl-btn" id="thumbDlBtn" title="Download thumbnail">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
       </div>
 
       <div class="info">
@@ -375,47 +347,6 @@
 
         <button class="download-cta" id="ctaBtn" onclick="startDownload()">Download MP4</button>
         <div class="download-hint" id="downloadHint">processing media... this might take a moment.</div>
-      </div>
-    </div>
-
-    <!-- Guide section (accordion) -->
-    <div class="lower">
-      <div class="accordion">
-        <button class="accordion-header" id="accordionHeader">
-          <div class="panel-title">
-            <h2>Format &amp; Quality Guide</h2>
-            <span class="scribble">what each option actually means ✎</span>
-          </div>
-          <span class="chevron" id="accordionChevron">▾</span>
-        </button>
-        <div class="accordion-body" id="accordionBody">
-          <div class="guide">
-            <div class="guide-col mp4">
-              <h3><span class="dot" style="background:var(--red);border-radius:50%;display:inline-block;box-shadow:0 0 8px var(--red);"></span>MP4 (video)</h3>
-              <div class="sub">resolution = visual detail. higher = bigger file.</div>
-              <div class="guide-item"><div class="g-label">144p</div><div class="g-desc"><b>Data saver.</b> Watchable on a small screen, smallest file size.</div></div>
-              <div class="guide-item"><div class="g-label">360p</div><div class="g-desc"><b>Basic.</b> Fine for phones on a slow connection.</div></div>
-              <div class="guide-item"><div class="g-label">480p</div><div class="g-desc"><b>Standard.</b> Decent balance of clarity and size.</div></div>
-              <div class="guide-item"><div class="g-label">720p</div><div class="g-desc"><b>HD.</b> Sharp on laptops and most TVs.</div></div>
-              <div class="guide-item"><div class="g-label">1080p</div><div class="g-desc"><b>Full HD.</b> The usual default for a crisp picture.</div></div>
-              <div class="guide-item"><div class="g-label">1440p</div><div class="g-desc"><b>2K.</b> Noticeably sharper on larger monitors.</div></div>
-              <div class="guide-item"><div class="g-label">2160p</div><div class="g-desc"><b>4K.</b> Maximum detail, largest file size.</div></div>
-              <div class="guide-item"><div class="g-label">source</div><div class="g-desc"><b>Original.</b> Whatever quality was originally uploaded, untouched.</div></div>
-            </div>
-            <div class="guide-col mp3">
-              <h3><span class="dot" style="background:var(--blue);border-radius:50%;display:inline-block;box-shadow:0 0 8px var(--blue);"></span>MP3 (audio)</h3>
-              <div class="sub">bitrate = audio fidelity. higher = closer to source.</div>
-              <div class="guide-item"><div class="g-label">96kbps</div><div class="g-desc"><b>Tiny file.</b> Noticeably compressed, ok for spoken word.</div></div>
-              <div class="guide-item"><div class="g-label">128kbps</div><div class="g-desc"><b>Standard.</b> The old default — fine on phone speakers.</div></div>
-              <div class="guide-item"><div class="g-label">192kbps</div><div class="g-desc"><b>Good.</b> Clearer on headphones, still compact.</div></div>
-              <div class="guide-item"><div class="g-label">256kbps</div><div class="g-desc"><b>High.</b> Hard to tell from the original for most ears.</div></div>
-              <div class="guide-item"><div class="g-label">320kbps</div><div class="g-desc"><b>Max MP3.</b> The highest quality the MP3 format supports.</div></div>
-              <div class="guide-item"><div class="g-label">V0</div><div class="g-desc"><b>Variable rate.</b> Adjusts bitrate per second — efficient and high quality.</div></div>
-              <div class="guide-item"><div class="g-label">FLAC</div><div class="g-desc"><b>Lossless.</b> Bit-for-bit copy of the source, much bigger file.</div></div>
-              <div class="guide-item"><div class="g-label">WAV</div><div class="g-desc"><b>Uncompressed.</b> Raw audio, largest file, no processing.</div></div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </main>
@@ -626,18 +557,24 @@
     }
   }
 
-  // ── accordion ──
-  document.getElementById('accordionHeader').addEventListener('click', () => {
-    document.getElementById('accordionHeader').parentElement.classList.toggle('open');
-  });
-
   // ── input events ──
-  document.getElementById('fetchBtn').addEventListener('click', fetchInfo);
   document.getElementById('urlInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') fetchInfo();
   });
   document.getElementById('urlInput').addEventListener('paste', () => {
     setTimeout(fetchInfo, 50);
+  });
+
+  // ── thumbnail download ──
+  document.getElementById('thumbDlBtn').addEventListener('click', () => {
+    if (!currentUrl) return;
+    const apiUrl = `${API_BASE}/thumbnail?url=${encodeURIComponent(currentUrl)}`;
+    const a = document.createElement('a');
+    a.href = apiUrl;
+    a.download = 'thumbnail';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   });
 </script>
 </body>

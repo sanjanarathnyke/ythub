@@ -281,6 +281,100 @@ app.get('/api/download', async (req, res) => {
   }
 });
 
+// Download thumbnail
+app.get('/api/thumbnail', async (req, res) => {
+  try {
+    let { url } = req.query;
+
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+
+    url = normalizeUrl(url);
+
+    if (!isValidYoutubeUrl(url)) {
+      return res.status(400).json({ error: 'Invalid YouTube URL' });
+    }
+
+    const ytdlpAvailable = await ensureYtdlp();
+    if (!ytdlpAvailable) {
+      return res.status(500).json({
+        error: 'yt-dlp binary is not available. Please run npm install in the backend folder. If the issue persists, check your antivirus settings.'
+      });
+    }
+
+    const tmpBase = path.join(os.tmpdir(), `yt_thumb_${Date.now()}_${Math.floor(Math.random() * 10000)}`);
+
+    const args = {
+      writeThumbnail: true,
+      skipDownload: true,
+      output: tmpBase + '.%(ext)s',
+      noWarnings: true,
+      noCallHome: true,
+      noCheckCertificate: true,
+    };
+
+    const subprocess = ytDlp.exec(url, args);
+
+    subprocess.on('close', (code) => {
+      if (code === 0) {
+        const files = fs.readdirSync(os.tmpdir()).filter(f => f.startsWith(path.basename(tmpBase)));
+        if (files.length > 0) {
+          const thumbPath = path.join(os.tmpdir(), files[0]);
+          const ext = path.extname(thumbPath).slice(1) || 'jpg';
+          const stream = fs.createReadStream(thumbPath);
+
+          ytDlp(url, { dumpSingleJson: true, noWarnings: true, noCallHome: true }).then(info => {
+            const safeTitle = (info.title || 'thumbnail').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
+            res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}_thumbnail.${ext}"`);
+            res.setHeader('Content-Type', `image/${ext === 'jpg' ? 'jpeg' : ext}`);
+            stream.pipe(res);
+            stream.on('end', () => {
+              fs.unlink(thumbPath, () => {});
+            });
+            stream.on('error', () => {
+              if (!res.headersSent) res.status(500).end();
+              fs.unlink(thumbPath, () => {});
+            });
+          }).catch(() => {
+            res.setHeader('Content-Disposition', `attachment; filename="thumbnail.${ext}"`);
+            res.setHeader('Content-Type', `image/${ext === 'jpg' ? 'jpeg' : ext}`);
+            stream.pipe(res);
+            stream.on('end', () => {
+              fs.unlink(thumbPath, () => {});
+            });
+            stream.on('error', () => {
+              if (!res.headersSent) res.status(500).end();
+              fs.unlink(thumbPath, () => {});
+            });
+          });
+        } else {
+          res.status(500).json({ error: 'Thumbnail extraction failed' });
+        }
+      } else {
+        res.status(500).json({ error: 'Thumbnail download failed' });
+      }
+    });
+
+    subprocess.on('error', (err) => {
+      console.error('Thumbnail error:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Failed to download thumbnail' });
+      }
+    });
+
+    req.on('close', () => {
+      subprocess.kill();
+    });
+
+  } catch (error) {
+    console.error('Error downloading thumbnail:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to download thumbnail' });
+    }
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
 });
