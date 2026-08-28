@@ -3,6 +3,7 @@ const cors = require('cors');
 const ytDlp = require('yt-dlp-exec');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -156,55 +157,121 @@ app.get('/api/download', async (req, res) => {
       return res.status(400).json({ error: 'Format (itag) is required' });
     }
 
-    const syntheticQualityMap = {
-      q144: 'bestvideo[height<=144]+bestaudio/best[height<=144]',
-      q256: 'bestvideo[height<=256]+bestaudio/best[height<=256]',
-      q360: 'bestvideo[height<=360]+bestaudio/best[height<=360]',
-      q480: 'bestvideo[height<=480]+bestaudio/best[height<=480]',
-    };
-
-    const ytdlpFormat = syntheticQualityMap[itag] || itag;
-    const qualityLabel = syntheticQualityMap[itag] ? itag.replace('q', '') + 'p' : itag;
-
+    const isAudio = itag.startsWith('mp3-');
+    
     // Get info to determine filename
     const info = await ytDlp(url, {
       dumpSingleJson: true,
       noWarnings: true,
     });
+    
+    let ytdlpFormat, qualityLabel, extension, audioFormat, audioQuality;
+
+    if (isAudio) {
+      const qParts = itag.split('-');
+      const val = qParts[1];
+      if (val === 'FLAC') {
+          audioFormat = 'flac';
+          qualityLabel = 'FLAC';
+          extension = 'flac';
+      } else if (val === 'WAV') {
+          audioFormat = 'wav';
+          qualityLabel = 'WAV';
+          extension = 'wav';
+      } else {
+          audioFormat = 'mp3';
+          qualityLabel = val + (val === 'V0' ? '' : 'kbps');
+          extension = 'mp3';
+          audioQuality = val === 'V0' ? 0 : val + 'K';
+      }
+    } else {
+      const syntheticQualityMap = {
+        q144: 'bestvideo[height<=144]+bestaudio/best[height<=144]',
+        q256: 'bestvideo[height<=256]+bestaudio/best[height<=256]',
+        q360: 'bestvideo[height<=360]+bestaudio/best[height<=360]',
+        q480: 'bestvideo[height<=480]+bestaudio/best[height<=480]',
+      };
+      ytdlpFormat = syntheticQualityMap[itag] || itag;
+      qualityLabel = syntheticQualityMap[itag] ? itag.replace('q', '') + 'p' : itag;
+      extension = 'mp4';
+    }
 
     const safeTitle = (info.title || 'video').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
-    const filename = `${safeTitle}_${qualityLabel}.mp4`;
+    const filename = `${safeTitle}_${qualityLabel}.${extension}`;
 
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Content-Type', isAudio ? (extension === 'mp3' ? 'audio/mpeg' : `audio/${extension}`) : 'video/mp4');
 
-    // Stream the download using yt-dlp
-    const subprocess = ytDlp.exec(url, {
-      format: ytdlpFormat,
-      output: '-',
-      noWarnings: true,
-      noCallHome: true,
-    });
-
-    subprocess.stdout.pipe(res);
-
-    subprocess.stdout.on('error', (err) => {
-      console.error('Stream error:', err);
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'Download stream failed' });
+    if (isAudio) {
+      const tmpBase = path.join(os.tmpdir(), `yt_${Date.now()}_${Math.floor(Math.random() * 10000)}`);
+      
+      const args = {
+        extractAudio: true,
+        audioFormat: audioFormat,
+        output: tmpBase + '.%(ext)s',
+        noWarnings: true,
+        noCallHome: true,
+      };
+      if (audioQuality !== undefined) {
+        args.audioQuality = audioQuality;
       }
-    });
+      
+      const subprocess = ytDlp.exec(url, args);
 
-    subprocess.on('error', (err) => {
-      console.error('yt-dlp error:', err);
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'Download failed' });
-      }
-    });
+      subprocess.on('close', (code) => {
+        if (code === 0) {
+          const finalPath = tmpBase + '.' + extension;
+          if (fs.existsSync(finalPath)) {
+            const stream = fs.createReadStream(finalPath);
+            stream.pipe(res);
+            stream.on('end', () => {
+              fs.unlink(finalPath, () => {});
+            });
+            stream.on('error', () => {
+              if (!res.headersSent) res.status(500).end();
+              fs.unlink(finalPath, () => {});
+            });
+          } else {
+            if (!res.headersSent) res.status(500).json({ error: 'Audio conversion output missing' });
+          }
+        } else {
+          if (!res.headersSent) res.status(500).json({ error: 'Audio conversion failed' });
+        }
+      });
+      
+      req.on('close', () => {
+        subprocess.kill();
+      });
+      
+    } else {
+      // Stream the download using yt-dlp to stdout
+      const subprocess = ytDlp.exec(url, {
+        format: ytdlpFormat,
+        output: '-',
+        noWarnings: true,
+        noCallHome: true,
+      });
 
-    req.on('close', () => {
-      subprocess.kill();
-    });
+      subprocess.stdout.pipe(res);
+
+      subprocess.stdout.on('error', (err) => {
+        console.error('Stream error:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Download stream failed' });
+        }
+      });
+
+      subprocess.on('error', (err) => {
+        console.error('yt-dlp error:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Download failed' });
+        }
+      });
+
+      req.on('close', () => {
+        subprocess.kill();
+      });
+    }
 
   } catch (error) {
     console.error('Error downloading video:', error);
